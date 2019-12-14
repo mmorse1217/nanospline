@@ -3,22 +3,21 @@
 #include <Eigen/Core>
 #include <iostream>
 
+#include <nanospline/CurveTrait.h>
 #include <nanospline/SplineBase.h>
 
 namespace nanospline {
 
-template<typename _Scalar, int _dim, int _degree, bool _generic>
-class BSplineBase : public SplineBase<_Scalar, _dim> {
+template<typename CurveDerived>
+class BSplineBase : public CurveTrait<CurveDerived>::Base {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        static_assert(_dim > 0, "Dimension must be positive.");
-        static_assert(_degree>=0 || _generic,
-                "Invalid degree for non-generic B-spline setting");
-        using Base = SplineBase<_Scalar, _dim>;
-        using Scalar = _Scalar;
-        using Point = Eigen::Matrix<Scalar, 1, _dim>;
-        using ControlPoints = Eigen::Matrix<Scalar, Eigen::Dynamic, _dim>;
-        using KnotVector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+        using Trait = CurveTrait<CurveDerived>;
+        using Base = typename Trait::Base;
+        using Scalar = typename Trait::Scalar;
+        using Point = typename Trait::Point;
+        using ControlPoints = typename Trait::ControlPoints;
+        using KnotVector = typename Trait::KnotVector;
 
     public:
         virtual ~BSplineBase()=default;
@@ -80,6 +79,7 @@ class BSplineBase : public SplineBase<_Scalar, _dim> {
             assert(num_copies >= 1);
             assert(in_domain(t));
             validate_curve();
+            constexpr int dim = Trait::dim;
             const int r = num_copies;
             const int p = get_degree();
             const int k = locate_span(t);
@@ -96,7 +96,7 @@ class BSplineBase : public SplineBase<_Scalar, _dim> {
             knots_new.segment(k+1+r, m-k-1) = m_knots.segment(k+1,m-k-1);
             knots_new[m+r] = m_knots[m]; // Copy the last knot over.  It has no effects on the curve.
 
-            ControlPoints ctrl_pts_new(n+r+1, _dim);
+            ControlPoints ctrl_pts_new(n+r+1, dim);
             assert(k-p+1 >= 0);
             if (k-p+1 > 0) {
                 ctrl_pts_new.topRows(k-p+1) =
@@ -108,7 +108,7 @@ class BSplineBase : public SplineBase<_Scalar, _dim> {
                     m_control_points.bottomRows(n-k+s+1);
             }
 
-            ControlPoints Rw = m_control_points.block(k-p, 0, p-s+1, _dim);
+            ControlPoints Rw = m_control_points.block(k-p, 0, p-s+1, dim);
             for (int j=1; j<=r; j++) {
                 int L = k-p+j;
                 for (int i=0; i<=p-j-s; i++) {
@@ -131,7 +131,20 @@ class BSplineBase : public SplineBase<_Scalar, _dim> {
             m_knots.swap(knots_new);
         }
 
+        virtual void write(std::ostream &out) const override {
+            out << "c:\n" << m_control_points << "\n";
+            out << "k:\n" << m_knots << "\n";
+        }
+
     public:
+        CurveDerived& get_derived() {
+            return *dynamic_cast<CurveDerived*>(this);
+        }
+
+        const CurveDerived& get_derived() const {
+            return *dynamic_cast<CurveDerived*>(this);
+        }
+
         int locate_span(const Scalar t) const {
             const auto p = get_degree();
             const auto num_knots = m_knots.rows();
@@ -233,15 +246,10 @@ class BSplineBase : public SplineBase<_Scalar, _dim> {
             return m_knots[num_knots-p-1];
         }
 
-        virtual void write(std::ostream &out) const override {
-            out << "c:\n" << m_control_points << "\n";
-            out << "k:\n" << m_knots << "\n";
-        }
-
     protected:
         void validate_curve() const {
             const auto d = get_degree();
-            if (d < 0 || (_degree >= 0 && d != _degree)) {
+            if (d < 0 || (Trait::degree >= 0 && d != Trait::degree)) {
                 throw invalid_setting_error("Invalid BSpline curve: wrong degree.");
             }
         }

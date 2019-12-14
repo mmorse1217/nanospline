@@ -9,9 +9,9 @@
 namespace nanospline {
 
 template<typename _Scalar, int _dim=2, int _degree=3, bool _generic=_degree<0 >
-class Bezier : public BezierBase<_Scalar, _dim, _degree, _generic> {
+class Bezier : public BezierBase<Bezier<_Scalar, _dim, _degree, _generic> > {
     public:
-        using Base = BezierBase<_Scalar, _dim, _degree, _generic>;
+        using Base = BezierBase<Bezier<_Scalar, _dim, _degree, _generic> >;
         using Scalar = typename Base::Scalar;
         using Point = typename Base::Point;
         using ControlPoints = typename Base::ControlPoints;
@@ -71,9 +71,9 @@ class Bezier : public BezierBase<_Scalar, _dim, _degree, _generic> {
 };
 
 template<typename _Scalar, int _dim>
-class Bezier<_Scalar, _dim, 0, false> : public BezierBase<_Scalar, _dim, 0, false> {
+class Bezier<_Scalar, _dim, 0, false> : public BezierBase<Bezier<_Scalar, _dim, 0, false> > {
     public:
-        using Base = BezierBase<_Scalar, _dim, 0, false>;
+        using Base = BezierBase<Bezier<_Scalar, _dim, 0, false> >;
         using Scalar = typename Base::Scalar;
         using Point = typename Base::Point;
         using ControlPoints = typename Base::ControlPoints;
@@ -97,9 +97,9 @@ class Bezier<_Scalar, _dim, 0, false> : public BezierBase<_Scalar, _dim, 0, fals
 };
 
 template<typename _Scalar, int _dim>
-class Bezier<_Scalar, _dim, 1, false> : public BezierBase<_Scalar, _dim, 1, false> {
+class Bezier<_Scalar, _dim, 1, false> : public BezierBase<Bezier<_Scalar, _dim, 1, false> > {
     public:
-        using Base = BezierBase<_Scalar, _dim, 1, false>;
+        using Base = BezierBase<Bezier<_Scalar, _dim, 1, false> >;
         using Scalar = typename Base::Scalar;
         using Point = typename Base::Point;
         using ControlPoints = typename Base::ControlPoints;
@@ -126,9 +126,9 @@ class Bezier<_Scalar, _dim, 1, false> : public BezierBase<_Scalar, _dim, 1, fals
 };
 
 template<typename _Scalar, int _dim>
-class Bezier<_Scalar, _dim, 2, false> : public BezierBase<_Scalar, _dim, 2, false> {
+class Bezier<_Scalar, _dim, 2, false> : public BezierBase<Bezier<_Scalar, _dim, 2, false> > {
     public:
-        using Base = BezierBase<_Scalar, _dim, 2, false>;
+        using Base = BezierBase<Bezier<_Scalar, _dim, 2, false> >;
         using Scalar = typename Base::Scalar;
         using Point = typename Base::Point;
         using ControlPoints = typename Base::ControlPoints;
@@ -161,9 +161,9 @@ class Bezier<_Scalar, _dim, 2, false> : public BezierBase<_Scalar, _dim, 2, fals
 };
 
 template<typename _Scalar, int _dim>
-class Bezier<_Scalar, _dim, 3, false> : public BezierBase<_Scalar, _dim, 3, false> {
+class Bezier<_Scalar, _dim, 3, false> : public BezierBase<Bezier<_Scalar, _dim, 3, false> > {
     public:
-        using Base = BezierBase<_Scalar, _dim, 3, false>;
+        using Base = BezierBase<Bezier<_Scalar, _dim, 3, false> >;
         using Scalar = typename Base::Scalar;
         using Point = typename Base::Point;
         using ControlPoints = typename Base::ControlPoints;

@@ -2,21 +2,20 @@
 
 #include <Eigen/Core>
 
+#include <nanospline/CurveTrait.h>
 #include <nanospline/SplineBase.h>
 
 namespace nanospline {
 
-template<typename _Scalar, int _dim, int _degree, bool _generic>
-class BezierBase : public SplineBase<_Scalar, _dim> {
+template<typename CurveDerived>
+class BezierBase : public CurveTrait<CurveDerived>::Base {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        static_assert(_dim > 0, "Dimension must be positive.");
-        static_assert(_degree>=0 || _generic,
-                "Invalid degree for non-generic Bezier setting");
-        using Base = SplineBase<_Scalar, _dim>;
-        using Scalar = _Scalar;
-        using Point = Eigen::Matrix<Scalar, 1, _dim>;
-        using ControlPoints = Eigen::Matrix<Scalar, _generic?Eigen::Dynamic:_degree+1, _dim>;
+        using Trait = CurveTrait<CurveDerived>;
+        using Base = typename Trait::Base;
+        using Scalar = typename Trait::Scalar;
+        using Point = typename Trait::Point;
+        using ControlPoints = typename Trait::ControlPoints;
 
     public:
         virtual ~BezierBase()=default;
@@ -35,8 +34,19 @@ class BezierBase : public SplineBase<_Scalar, _dim> {
                     p, num_samples, lower, upper, level);
         }
 
+        virtual void write(std::ostream &out) const override {
+            out << "c:\n" << m_control_points << "\n";
+        }
 
     public:
+        CurveDerived& get_derived() {
+            return *dynamic_cast<CurveDerived*>(this);
+        }
+
+        const CurveDerived& get_derived() const {
+            return *dynamic_cast<CurveDerived*>(this);
+        }
+
         const ControlPoints& get_control_points() const {
             return m_control_points;
         }
@@ -52,7 +62,7 @@ class BezierBase : public SplineBase<_Scalar, _dim> {
         }
 
         int get_degree() const {
-            return _generic ? static_cast<int>(m_control_points.rows())-1 : _degree;
+            return Trait::generic ? static_cast<int>(m_control_points.rows())-1 : Trait::degree;
         }
 
         Scalar get_domain_lower_bound() const {
@@ -61,11 +71,6 @@ class BezierBase : public SplineBase<_Scalar, _dim> {
 
         Scalar get_domain_upper_bound() const {
             return 1.0;
-        }
-
-
-        virtual void write(std::ostream &out) const override {
-            out << "c:\n" << m_control_points << "\n";
         }
 
     protected:

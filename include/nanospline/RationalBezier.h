@@ -9,14 +9,14 @@
 namespace nanospline {
 
 template<typename _Scalar, int _dim=2, int _degree=3, bool _generic=_degree<0>
-class RationalBezier : public BezierBase<_Scalar, _dim, _degree, _generic> {
+class RationalBezier : public BezierBase<RationalBezier<_Scalar, _dim, _degree, _generic> > {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        using Base = BezierBase<_Scalar, _dim, _degree, _generic>;
+        using Base = BezierBase<RationalBezier<_Scalar, _dim, _degree, _generic> >;
         using Scalar = typename Base::Scalar;
         using Point = typename Base::Point;
         using ControlPoints = typename Base::ControlPoints;
-        using WeightVector = Eigen::Matrix<_Scalar, _generic?Eigen::Dynamic:_degree+1, 1>;
+        using WeightVector = typename Base::Trait::WeightVector;
         using BezierHomogeneous = Bezier<_Scalar, _dim+1, _degree, _generic>;
 
     public:
