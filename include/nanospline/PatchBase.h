@@ -14,6 +14,7 @@ class PatchBase {
     public:
         using Scalar = _Scalar;
         using Point = Eigen::Matrix<Scalar, 1, _dim>;
+        using Vector3 = Eigen::Matrix<Scalar, 1, 3>; // for distinction between a geometric value and a vector in 3D
         using UVPoint = Eigen::Matrix<Scalar, 1, 2>;
         using ControlGrid = Eigen::Matrix<Scalar, Eigen::Dynamic, _dim>;
         using ThisType = PatchBase<_Scalar,_dim>;
@@ -53,6 +54,7 @@ class PatchBase {
         }
 
     public:
+
 
 
         // Translate (i,j) control point indexing into a linear index. Note that
@@ -252,6 +254,121 @@ class PatchBase {
         int m_degree_u = -1;
         int m_degree_v = -1;
         ControlGrid m_control_grid;
+    public:
+        Point normal(Scalar u, Scalar v) { 
+            assert(_dim==3);
+            const Point Su = this->evaluate_derivative_u(u, v);
+            const Point Sv = this->evaluate_derivative_v(u, v);
+            return Su.cross(Sv).normalize();
+        }
+        
+        Vector3 first_fundamental_form_coeffs(Scalar u, Scalar v){
+            assert(_dim==3);
+            const Point Su = this->evaluate_derivative_u(u, v);
+            const Point Sv = this->evaluate_derivative_v(u, v);
+            
+            Vector3 coefficients;
+            coefficients(0) = Su.dot(Su);
+            coefficients(1) = Su.dot(Sv);
+            coefficients(2) = Sv.dot(Sv);
+
+            return coefficients;
+        }
+        
+        Vector3 second_fundamental_form_coeffs(Scalar u, Scalar v){
+            assert(_dim==3);
+            const Point Suu = evaluate_2nd_derivative_uu(u, v);
+            const Point Suv = evaluate_2nd_derivative_uv(u, v);
+            const Point Svv = evaluate_2nd_derivative_vv(u, v);
+            const Point normal = normal(u,v);
+            Vector3 coefficients;
+            coefficients(0) = Suu.dot(normal);
+            coefficients(1) = Suv.dot(normal);
+            coefficients(2) = Svv.dot(normal);
+            return coefficients;
+        }
+
+        Vector3 first_fundamental_form(Scalar u, Scalar v){
+            assert(_dim==3);
+            
+            Vector3 coefficients = first_fundamental_form_coeffs(u,v);
+            Eigen::Matrix<Scalar, 2, 2> form_matrix;
+            form_matrix(0,0) = coefficients(0);
+            form_matrix(0,1) = coefficients(1);
+            form_matrix(1,0) = coefficients(1);
+            form_matrix(1,1) = coefficients(2);
+            return form_matrix;
+        }
+
+        Vector3 second_fundamental_form(Scalar u, Scalar v){
+            assert(_dim==3);
+            
+            Vector3 coefficients = second_fundamental_form_coeffs(u,v);
+            Eigen::Matrix<Scalar, 2, 2> form_matrix;
+            form_matrix(0,0) = coefficients(0);
+            form_matrix(0,1) = coefficients(1);
+            form_matrix(1,0) = coefficients(1);
+            form_matrix(1,1) = coefficients(2);
+            return form_matrix;
+        }
+
+        Scalar gaussian_curvature(Scalar u, Scalar v){
+            assert(_dim==3);
+            Vector3 first_form_coeffs = first_fundamental_form_coeffs(u, v);
+            Vector3 second_form_coeffs = second_fundamental_form_coeffs(u, v);
+            Scalar E = first_form_coeffs(0);
+            Scalar F = first_form_coeffs(1);
+            Scalar G = first_form_coeffs(2);
+
+            Scalar L = second_form_coeffs(0);
+            Scalar M = second_form_coeffs(1);
+            Scalar N = second_form_coeffs(2);
+
+            return (L*N - M*M)/(E*G - F*F);
+
+        }
+
+        Scalar mean_curvature(Scalar u, Scalar v){
+            assert(_dim==3);
+            Vector3 first_form_coeffs = first_fundamental_form_coeffs(u, v);
+            Vector3 second_form_coeffs = second_fundamental_form_coeffs(u, v);
+            Scalar E = first_form_coeffs(0);
+            Scalar F = first_form_coeffs(1);
+            Scalar G = first_form_coeffs(2);
+
+            Scalar L = second_form_coeffs(0);
+            Scalar M = second_form_coeffs(1);
+            Scalar N = second_form_coeffs(2);
+            return Scalar(.5)*(E*N - 2*F*M + G*L)/(E*G - F*F);
+        }
+
+        Vector3 surface_gradient(Scalar u, Scalar v, Scalar Fu, Scalar Fv){
+            assert(_dim==3);
+            Vector3 first_form_coeffs = first_fundamental_form_coeffs(u, v);
+            Scalar E = first_form_coeffs(0);
+            Scalar F = first_form_coeffs(1);
+            Scalar G = first_form_coeffs(2);
+            Scalar W = E*G - F*F;
+            const Point Su = this->evaluate_derivative_u(u, v);
+            const Point Sv = this->evaluate_derivative_v(u, v);
+
+            return 1./(W*W)*( (G*Su - F*Sv)*Fu + (E*Sv - F*Su)*Fv );
+
+        }
+        Scalar surface_divergence(Scalar u, Scalar v, Vector3 Fu, Vector3 Fv){
+            assert(_dim==3);
+            Vector3 first_form_coeffs = first_fundamental_form_coeffs(u, v);
+            Scalar E = first_form_coeffs(0);
+            Scalar F = first_form_coeffs(1);
+            Scalar G = first_form_coeffs(2);
+            Scalar W = E*G - F*F;
+
+            const Point Su = this->evaluate_derivative_u(u, v);
+            const Point Sv = this->evaluate_derivative_v(u, v);
+
+            return 1./(W*W)*( (G*Fu - F*Fv).dot(Su) + (E*Fv - F*Fu).dot(Sv) );
+        }
+        
 };
 
 }
